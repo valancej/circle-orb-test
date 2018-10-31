@@ -1,0 +1,37 @@
+version: 2.1
+
+orbs:
+  anchore: anchore/anchore-engine@dev:latest
+jobs:
+  local_image_scan:
+    executor: anchore/anchore_engine
+    steps:
+      - checkout
+      - run:
+          name: build container
+          command: docker build -t ${CIRCLE_PROJECT_REPONAME}:ci -f .circleci/Dockerfile .
+      - anchore/analyze_local_image:
+          image_name: ${CIRCLE_PROJECT_REPONAME}:ci
+
+  publish_dev_orb:
+    docker:
+      - image: circleci/circleci-cli:latest
+    steps:
+      - checkout
+      - run:
+          name: Validate orb
+          command: circleci orb validate circleci-orbs/anchore-engine/orb.yml --token ${CIRCLECI_TOKEN}
+      - run:
+          name: Publish dev orb
+          command: circleci orb publish circleci-orbs/anchore-engine/orb.yml anchore/anchore-engine@dev:latest --token ${CIRCLECI_TOKEN}
+
+workflows:
+  scan_image:
+    jobs:
+      - local_image_scan
+      - anchore/image_scan:
+          image_name: 'anchore/anchore-engine:latest'
+      - anchore/image_scan:
+          image_name: 'anchore/private_testing:anchore-ui-dev'
+          private_registry: True
+          timeout: '500'
