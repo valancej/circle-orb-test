@@ -21,7 +21,7 @@ RUN apt-get update && apt-get upgrade -y
 # Install NGINX to test.
 RUN apt-get install nginx -y
 
-#
+##
 # Expose port 22
 EXPOSE 22
 
